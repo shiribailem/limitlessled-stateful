@@ -1,0 +1,72 @@
+<html>
+<head>
+<title>Lights</title>
+<script type="text/javascript">
+function httpGet(theUrl)
+{
+    var xmlHttp = null;
+
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", theUrl, false );
+    xmlHttp.send( null );
+    return xmlHttp.responseText;
+}
+
+function updateStatus()
+{
+    var data = JSON.parse(httpGet('/get/{{ roomid }}'));
+
+    document.getElementById("bright").innerHTML = Math.round(data['brightness']);
+    document.getElementById("color").innerHTML = Math.round(data['color']);
+    document.getElementById("on_state").innerHTML = data['on'];
+}
+
+function startcycle()
+{
+    setInterval(updateStatus,3000);
+}
+
+</script>
+</head>
+
+<body>
+
+<h1>{{ roomid }}</h1>
+<h1><a href="/">Return to Menu</a></h1>
+
+<table border=1 width=100% height=70%>
+<tr height=50%>
+<td bgcolor=white onclick="httpGet('/set/{{ roomid }}/256')" width=14.28%></td>
+<td bgcolor=red onclick="httpGet('/set/{{ roomid }}/176')" width=14.28% ></td>
+<td bgcolor=yellow onclick="httpGet('/set/{{ roomid }}/128')" width=14.28% ></td>
+<td bgcolor=green onclick="httpGet('/set/{{ roomid }}/96')" width=14.28% ></td>
+<td bgcolor=blue onclick="httpGet('/set/{{ roomid }}/16')" width=14.28% ></td>
+<td bgcolor=violet onclick="httpGet('/set/{{ roomid }}/0')" width=14.28% ></td>
+<td bgcolor=black onclick="httpGet('/off/{{ roomid }}')" width=14.28% ></td>
+</tr>
+
+<tr height=50% style="font-size: 200%">
+<td><a onclick="httpGet('/set/{{ roomid }}/-/27')" >100%</a></td>
+<td><a onclick="httpGet('/set/{{ roomid }}/-/20')" >75%</a></td>
+<td><a onclick="httpGet('/set/{{ roomid }}/-/14')" >50%</a></td>
+<td><a onclick="httpGet('/set/{{ roomid }}/-/8')" >25%</a></td>
+<td><a onclick="httpGet('/set/{{ roomid }}/-/2')" >1%</a></td>
+</tr>
+</table>
+
+<br/>
+
+<table border=1 height=10%>
+<tr style="font-size: 200%">
+<td>Current Brightness:</td><td><div id="bright"></div></h2></td>
+<td>Current Color:</td><td id="color">&nbsp; &nbsp; &nbsp; &nbsp;</td>
+<td>On:</td><td id="on_state">&nbsp;</td>
+</tr>
+</table>
+
+<script>
+startcycle();
+</script>
+
+</body>
+</html>

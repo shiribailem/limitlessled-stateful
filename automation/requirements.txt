@@ -1,0 +1,8 @@
+#https://github.com/oblique63/Python-GoogleCalendarParser
+#icalendar
+#beautifulsoup
+#pytz
+wifileds
+
+In sysctl.conf:
+net.ipv4.icmp_echo_ignore_broadcasts = 0
