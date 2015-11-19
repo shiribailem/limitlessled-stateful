@@ -12,6 +12,14 @@ function httpGet(theUrl)
     return xmlHttp.responseText;
 }
 
+function manualSet()
+{
+	var color = document.getElementById("colorfield");
+	var bright = document.getElementById("brightfield");
+
+	httpGet('/set/{{ roomid }}/' + color.value + '/' + bright.value);
+}
+
 function updateStatus()
 {
     var data = JSON.parse(httpGet('/get/{{ roomid }}'));
@@ -62,6 +70,12 @@ function startcycle()
 <td>Current Color:</td><td id="color">&nbsp; &nbsp; &nbsp; &nbsp;</td>
 <td>On:</td><td id="on_state">&nbsp;</td>
 </tr>
+</table>
+
+<table>
+<tr><td>Manual:</td><td><input type=submit onclick="manualSet()"></input></tr>
+<tr><td>Color:</td><td><input id=colorfield type=text></input></td></tr>
+<tr><td>Brightness:</td><td><input id=brightfield type=text></input></td></tr>
 </table>
 
 <script>
