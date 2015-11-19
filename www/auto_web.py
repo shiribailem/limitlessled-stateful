@@ -3,6 +3,7 @@ import json
 import socket
 
 from flask import Flask, request, render_template
+from nocache import nocache
 app = Flask(__name__)
 
 host = '127.0.0.1'
@@ -17,6 +18,7 @@ def room_menu(roomid):
     return render_template('controls.html',roomid=roomid)
 
 @app.route("/off/<zone>")
+@nocache
 def set_off(zone):
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -29,6 +31,7 @@ def set_off(zone):
     return response
 
 @app.route("/on/<zone>")
+@nocache
 def set_on(zone):
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -41,6 +44,7 @@ def set_on(zone):
     return response
 
 @app.route("/get/<zone>")
+@nocache
 def get_zone(zone):
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -58,6 +62,7 @@ def get_zone(zone):
 @app.route("/set/<zone>/<int:color>/<int:bright>")
 @app.route("/set/<zone>/<int:color>/-/<int:duration>")
 @app.route("/set/<zone>/<int:color>/<int:bright>/<int:duration>")
+@nocache
 def set_color(zone,color=-10,bright=-10,duration=0):
 
     if color < 0 or bright < 0:
