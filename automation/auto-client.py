@@ -63,6 +63,7 @@ if arguments.off:
         send_command({"command": "off", "zone": arguments.zone, "force": arguments.force}, arguments.verbose)
     elif arguments.verbose:
         print "off: Zone is already off"
+    sys.exit()
 
 if arguments.brightness is not None and (arguments.color is None or not arguments.white):
     send_command({"command": "set", "brightness": int(arguments.brightness), "zone": arguments.zone,

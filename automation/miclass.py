@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from colorsys import rgb_to_hsv, hsv_to_rgb
 from time import sleep
 from Queue import Queue
 import threading
@@ -60,6 +61,57 @@ class Zone:
         message["command"] = "on"
         self.queue.put(message)
         self.on = True
+        return True
+
+    def convert_from_rgb(self, r, g, b, adj=170):
+            hue, sat, value = rgb_to_hsv(float(r)/255.0, float(g)/255.0, float(b)/255.0)
+
+            hue = int(hue * 255)
+            sat = int(sat * 10)
+            value = int(value * 26) + 1
+            hue -= adj
+
+            if hue < 0:
+                hue += 255
+
+            if sat <= 2:
+                return 255 - hue, True, value
+            else:
+                return 255 - hue, False, value
+
+    def convert_to_rgb(self, x):
+        x = 255 - x
+
+        x += 170
+
+        if x > 255:
+            x -= 255
+
+        r, g, b = hsv_to_rgb(float(x)/255.0, 1, 1.0)
+        r *= 255
+        g *= 255
+        b *= 255
+
+        return int(r), int(g), int(b)
+
+    def get_rgb(self):
+        if not self.on:
+            return 0, 0, 0
+        elif self.color < 0:
+            return 255, 255, 255
+        else:
+            return self.convert_to_rgb(self.color)
+
+    def set_rgb(self, r, g, b, duration=0):
+        color, white, brightness = self.convert_from_rgb(r, g, b)
+        if not brightness == 1:
+            if white:
+                color = -1
+
+            self.blend_color(color, brightness, duration)
+        else:
+            self.set_off(duration)
+
         return True
 
     def set_color(self, color, brightness=None, refresh=True):

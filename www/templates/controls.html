@@ -12,6 +12,11 @@ function httpGet(theUrl)
     return xmlHttp.responseText;
 }
 
+function rgbset(color)
+{
+    httpGet('/rgbset/{{ roomid }}/' + color)
+}
+
 function manualSet()
 {
 	var color = document.getElementById("colorfield");
@@ -20,12 +25,22 @@ function manualSet()
 	httpGet('/set/{{ roomid }}/' + color.value + '/' + bright.value);
 }
 
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
 function updateStatus()
 {
     var data = JSON.parse(httpGet('/get/{{ roomid }}'));
 
     document.getElementById("bright").innerHTML = Math.round(data['brightness']);
     document.getElementById("color").innerHTML = Math.round(data['color']);
+    document.getElementById("color").style.backgroundColor = rgbToHex(data['rgb'][0],data['rgb'][1],data['rgb'][2]);
     document.getElementById("on_state").innerHTML = data['on'];
 }
 
@@ -41,6 +56,14 @@ function startcycle()
 
 <h1>{{ roomid }}</h1>
 <h1><a href="/">Return to Menu</a></h1>
+
+<script src="/static/jscolor.min.js"></script>
+
+<input class="jscolor" id="picker" onchange="rgbset(this.jscolor)">
+
+<script type="text/javascript">
+    document.getElementById('picker').jscolor.show();
+</script>
 
 <table border=1 width=100% height=70%>
 <tr height=50%>

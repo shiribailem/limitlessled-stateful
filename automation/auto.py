@@ -27,8 +27,13 @@ class ControlThread(threading.Thread):
                     self.controller.set_color(command['color'])
                 elif 'brightness' in command.keys():
                     self.controller.set_brightness(command['brightness'])
+                elif 'rgb' in command.keys():
+                    self.controller.set_rgb(*command['rgb'])
             elif command['command'] == 'blend':
-                self.controller.blend_color(command['color'], command['brightness'], command['duration'])
+                if not "rgb" in command.keys():
+                    self.controller.blend_color(command['color'], command['brightness'], command['duration'])
+                else:
+                    self.controller.set_rgb(*command['rgb'], duration=command['duration'])
             elif command['command'] == 'off':
                 if 'duration' in command.keys():
                     self.controller.set_off(command['duration'])
@@ -37,14 +42,14 @@ class ControlThread(threading.Thread):
             elif command['command'] == 'on':
                 self.controller.turn_on()
 
-zoneconfig = {'living': {'host': '192.168.0.21', 'zone': 1, 'subtype': 'rgbw'},
-              'keith': {'host': '192.168.0.21', 'zone': 2, 'subtype': 'rgbw'},
-              'chris': {'host': '192.168.0.21', 'zone': 3, 'subtype': 'rgbw'},
-              'living-side': {'host': '192.168.0.21', 'zone': 4, 'subtype': 'rgbw'},
-              'kitchen': {'host': '192.168.0.21', 'zone': 1, 'subtype': 'rgb'}
+zoneconfig = {'living': {'host': 'milight-hub.foggyminds.net', 'zone': 1, 'subtype': 'rgbw'},
+              'keith': {'host': 'milight-hub.foggyminds.net', 'zone': 2, 'subtype': 'rgbw'},
+              'chris': {'host': 'milight-hub.foggyminds.net', 'zone': 3, 'subtype': 'rgbw'},
+              'living-side': {'host': 'milight-hub.foggyminds.net', 'zone': 4, 'subtype': 'rgbw'},
+              'kitchen': {'host': 'milight-hub.foggyminds.net', 'zone': 1, 'subtype': 'rgb'}
               }
 
-bridges = [['bridge1', '192.168.0.38', 8899]]
+bridges = [['bridge1', '192.168.0.251', 8899]]
 
 controllers = {}
 
@@ -128,12 +133,15 @@ while threading.active_count() > 1:
                 message = {'command': 'set'}
                 if 'duration' in data.keys():
                     message['duration'] = data['duration']
+                    message['command'] = 'blend'
                 if 'color' in data.keys():
                     message['color'] = data['color']
+                elif 'rgb' in data.keys():
+                    message['rgb'] = data['rgb']
                 if 'brightness' in data.keys():
                     message['brightness'] = data['brightness']
 
-                if 'color' in message.keys() or 'brightness' in message.keys():
+                if 'color' in message.keys() or 'rgb' in message.keys() or 'brightness' in message.keys():
                     zones[data['zone']].queue.put(message)
                 clientsocket.sendall(json.dumps({'response': 'ok'}))
             else:
@@ -143,7 +151,7 @@ while threading.active_count() > 1:
                 controller = zones_handles[data['zone']]
 
                 reply = {'color': controller.color, 'brightness': controller.brightness,
-                         'on': controller.on}
+                         'on': controller.on, 'rgb': controller.get_rgb()}
 
                 clientsocket.sendall(json.dumps(reply))
             else:

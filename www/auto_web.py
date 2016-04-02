@@ -2,7 +2,7 @@ from miclass import milight
 import json
 import socket
 
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, Response
 from nocache import nocache
 app = Flask(__name__)
 
@@ -50,6 +50,31 @@ def get_zone(zone):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host,port))
     s.sendall(json.dumps({"command": "get", "zone": zone}))
+
+    response = s.recv(1024)
+    s.close()
+
+    return response
+
+@app.route("/getzones")
+def get_zonelist():
+    data = json.dumps(['living','living-side','chris', 'keith', 'kitchen'])
+    resp = Response(response=data, status=200, mimetype="application/json")
+
+    return resp
+
+@app.route("/rgbset/<zone>/<color>")
+def set_rgb(zone,color):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host,port))
+
+    r = int(color[0:2], 16)
+    g = int(color[2:4], 16)
+    b = int(color[4:6], 16)
+
+    message = {"command": "set", "zone": zone, "rgb": (r, g, b), "force": True, "duration": 0}
+
+    s.sendall(json.dumps(message))
 
     response = s.recv(1024)
     s.close()
