@@ -305,13 +305,14 @@ class message_handler(threading.Thread):
             try:
                 command = self.queue.get(True,30)
             except:
-                if verbose:
-                    print "Refresh"
-                for item in self.parent.zones['rgbw']:
-                    item.refresh()
-                for item in self.parent.zones['white']:
-                    item.refresh()
-                self.parent.zones['rgb'].refresh()
+                if self.refresh:
+                    if verbose:
+                        print "Refresh"
+                    for item in self.parent.zones['rgbw']:
+                        item.refresh()
+                    for item in self.parent.zones['white']:
+                        item.refresh()
+                    self.parent.zones['rgb'].refresh()
 
             if command is not None:
                 if command["command"] == "on":
@@ -332,7 +333,7 @@ class message_handler(threading.Thread):
                     print command
 
 class Controller:
-    def __init__(self, host, port):
+    def __init__(self, host, port, refresh=True):
         self.host = host
         self.port = port
 
@@ -353,6 +354,7 @@ class Controller:
         self.__handler = message_handler()
         self.__handler.daemon = True
         self.__handler.queue = self.control_queue
+        self.__handler.refresh = refresh
         self.__handler.parent = self
         self.__handler.start()
 

@@ -7,7 +7,26 @@ import json
 import socket
 import traceback
 import sys
+from os.path import exists, expanduser
 
+# Load configuration file
+
+config = None
+
+for filename in [
+    "milight.json",
+    expanduser("~/.milight/milight.json"),
+    "/etc/milight/milight.json"
+]:
+    if exists(filename):
+        # If found, load user config to override defaults
+        with open(filename,'r') as file:
+            config = json.loads(file.read())
+        break
+
+if config is None:
+    print("No configuration found")
+    exit(1)
 
 class ControlThread(threading.Thread):
     def run(self):
@@ -42,36 +61,35 @@ class ControlThread(threading.Thread):
             elif command['command'] == 'on':
                 self.controller.turn_on()
 
-zoneconfig = {'living': {'host': 'milight-hub.foggyminds.net', 'zone': 1, 'subtype': 'rgbw'},
-              'keith': {'host': 'milight-hub.foggyminds.net', 'zone': 2, 'subtype': 'rgbw'},
-              'chris': {'host': 'milight-hub.foggyminds.net', 'zone': 3, 'subtype': 'rgbw'},
-              'living-side': {'host': 'milight-hub.foggyminds.net', 'zone': 4, 'subtype': 'rgbw'},
-              'kitchen': {'host': 'milight-hub.foggyminds.net', 'zone': 1, 'subtype': 'rgb'}
-              }
+#zoneconfig = {'living': {'host': 'milight-hub.foggyminds.net', 'zone': 1, 'subtype': 'rgbw'},
+#              'keith': {'host': 'milight-hub.foggyminds.net', 'zone': 2, 'subtype': 'rgbw'},
+#              'chris': {'host': 'milight-hub.foggyminds.net', 'zone': 3, 'subtype': 'rgbw'},
+#              'living-side': {'host': 'milight-hub.foggyminds.net', 'zone': 4, 'subtype': 'rgbw'},
+#              'kitchen': {'host': 'milight-hub.foggyminds.net', 'zone': 1, 'subtype': 'rgb'}
+#              }
 
 bridges = [['bridge1', '192.168.0.251', 8899]]
 
 controllers = {}
-
-for bridge in bridges:
-    controllers[bridge[0]] = miclass.Controller(bridge[1],bridge[2])
-
-zones_handles = {
-    'living': controllers['bridge1'].zones['rgbw'][0],
-    'keith': controllers['bridge1'].zones['rgbw'][1],
-    'chris': controllers['bridge1'].zones['rgbw'][2],
-    'living-side': controllers['bridge1'].zones['rgbw'][3],
-    'kitchen': controllers['bridge1'].zones['rgb']
-}
-
 zones = {}
 
-for zone in zones_handles.keys():
-    zones[zone] = ControlThread()
-    zones[zone].controller = zones_handles[zone]
-    zones[zone].queue = Queue()
-    zones[zone].daemon = True
-    zones[zone].start()
+for bridge in config["bridges"]:
+    controllers[bridge['name']] = miclass.Controller(bridge['host'], bridge['port'], refresh=bridge['refresh'])
+
+#zones_handles = {
+#    'living': controllers['bridge1'].zones['rgbw'][0],
+#    'keith': controllers['bridge1'].zones['rgbw'][1],
+#    'chris': controllers['bridge1'].zones['rgbw'][2],
+#    'living-side': controllers['bridge1'].zones['rgbw'][3],
+#    'kitchen': controllers['bridge1'].zones['rgb']
+#}
+
+    for zone in bridge['zones']:
+        zones[zone['name']] = ControlThread()
+        zones[zone['name']].controller = controllers[bridge['name']].zones[zone['type']][zone['zone'] - 1]
+        zones[zone['name']].queue = Queue()
+        zones[zone['name']].daemon = True
+        zones[zone['name']].start()
 
 #for zone in zoneconfig:
 #    controllers[zone] = ControlThread()
@@ -138,17 +156,23 @@ while threading.active_count() > 1:
                     message['color'] = data['color']
                 elif 'rgb' in data.keys():
                     message['rgb'] = data['rgb']
+                else:
+                    message['color'] = zones[data['zone']].controller.color
                 if 'brightness' in data.keys():
                     message['brightness'] = data['brightness']
+                else:
+                    message['brightness'] = zones[data['zone']].controller.brightness
 
                 if 'color' in message.keys() or 'rgb' in message.keys() or 'brightness' in message.keys():
                     zones[data['zone']].queue.put(message)
+                else:
+                    clientsocket.sendall(json.dumps({'response': 'fail', 'message': 'invalid command - missing settings'}))
                 clientsocket.sendall(json.dumps({'response': 'ok'}))
             else:
                 clientsocket.sendall(json.dumps({'response': 'fail', 'message': 'invalid zone'}))
         elif data['command'] == 'get':
             if data['zone'] in zones.keys():
-                controller = zones_handles[data['zone']]
+                controller = zones[data['zone']].controller
 
                 reply = {'color': controller.color, 'brightness': controller.brightness,
                          'on': controller.on, 'rgb': controller.get_rgb()}
