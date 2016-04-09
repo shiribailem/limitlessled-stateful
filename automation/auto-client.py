@@ -46,8 +46,7 @@ arguments = parser.parse_args()
 
 status = send_command({"command": "get", "zone": arguments.zone}, arguments.verbose)
 
-if arguments.noon:
-    if not status["on"]:
+if arguments.noon and not status["on"]:
         if arguments.verbose:
             print "no-on: Zone is currently off, exiting"
         sys.exit()
@@ -57,15 +56,13 @@ if arguments.on:
         send_command({"command": "on", "zone": arguments.zone, "force": arguments.force}, arguments.verbose)
     elif arguments.verbose:
         print "on: Zone is already on"
-
-if arguments.off:
+elif arguments.off:
     if status["on"]:
         send_command({"command": "off", "zone": arguments.zone, "force": arguments.force}, arguments.verbose)
     elif arguments.verbose:
         print "off: Zone is already off"
-    sys.exit()
 
-if arguments.brightness is not None and (arguments.color is None or not arguments.white):
+if arguments.brightness is not None and (arguments.color is None and not arguments.white):
     send_command({"command": "set", "brightness": int(arguments.brightness), "zone": arguments.zone,
                   "duration": arguments.duration, "force": arguments.force}, arguments.verbose)
 
@@ -79,6 +76,11 @@ if arguments.white and arguments.brightness is None:
                   "duration": arguments.duration, "force": arguments.force}, arguments.verbose)
 
 if (arguments.color is not None or arguments.white) and arguments.brightness is not None:
-    send_command(
-        {"command": "set", "color": status["color"], "brightness": status["brightness"], "duration": arguments.duration,
-         "zone": arguments.zone, "force": arguments.force}, arguments.verbose)
+    if arguments.color is not None:
+	    send_command(
+        	{"command": "set", "color": arguments.color, "brightness": int(arguments.brightness), "duration": arguments.duration,
+	         "zone": arguments.zone, "force": arguments.force}, arguments.verbose)
+    elif arguments.white:
+            send_command(
+                {"command": "set", "color": -1, "brightness": int(arguments.brightness), "duration": arguments.duration,
+                 "zone": arguments.zone, "force": arguments.force}, arguments.verbose)
